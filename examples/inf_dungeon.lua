@@ -10,6 +10,9 @@ local fsm = machine.create({
 		{ name = 'go', from = 'room3', to = 'room1' },
 	},
 	callbacks = {
+		on_room1 = function(self) print("Room1"); return self:go() end,
+		on_room2 = function(self) print("Room2"); return self:go() end,
+		on_room3 = function(self) print("Room3"); return self:go() end,
 		onroom1 = function(self) print("Room1"); self:go() end,
 		onroom2 = function(self) print("Room2"); self:go() end,
 		onroom3 = function(self) print("Room3"); self:go() end,
