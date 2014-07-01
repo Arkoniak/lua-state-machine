@@ -7,7 +7,7 @@ local fsm = machine.create({
 		{ name = 'startup', from = 'none', to = 'logo' },
 		{ name = 'enter_menu', from = 'logo', to = 'menu' },
 		{ name = 'battle_start', from = 'menu', to = 'new_battle' },
-		{ name = 'highscore', from = 'menu', to = 'highscore' },
+		{ name = 'go_highscore', from = 'menu', to = 'highscore' },
 		{ name = 'back_to_menu', from = {'highscore', 'end_battle'}, to = 'menu' },
 		{ name = 'ready', from = 'new_battle', to = 'turn_start' },
 		{ name = 'start_turn', from = 'turn_start', to = 'movement_phase'},
@@ -24,8 +24,10 @@ local fsm = machine.create({
 local ships
 local active_ships
 local turn_counter
-local games = 50000
+local games = 10
 local best_result = 0
+local moves
+local highscore_visits = 1
 
 math.randomseed( tonumber(tostring(os.time()):reverse():sub(1,6)))
 
@@ -39,17 +41,29 @@ function fsm:on_menu(event, from, to)
 		games = games - 1
 		print("Menu -> New Battle")
 		return fsm:battle_start()
+	elseif highscore_visits > 0 then
+		print("Menu -> Highscore")
+		highscore_visits = highscore_visits - 1
+		return fsm:go_highscore()
 	else
-		print("---------------------")
+		print("   ")
 		print("I do not want to play anymore!!!")
-		print("My best result is: " .. best_result)
 	end
+end
+
+function fsm:on_highscore(event, from, to)
+	print("+++++++++++++++++++++")
+	print("My best result is: " .. best_result)
+	print("+++++++++++++++++++++")
+
+	return fsm:back_to_menu()
 end
 
 function fsm:on_new_battle(event, from, to)
 	print("New Battle Begins!")
 	ships = 10
 	turn_counter = 0
+	moves = 0
 	return fsm:ready()
 end
 
@@ -71,12 +85,14 @@ function fsm:on_movement_phase(event, from, to)
 	if active_ships == 0 then 
 		return fsm:end_move()
 	else
+		moves = moves + 1
 		active_ships = active_ships - 1
 		return fsm:move()
 	end
 end
 
 function fsm:on_end_attack(event, from, to)
+	print("    Available ships: " .. ships)
 	print("  End Turn")
 end
 
@@ -100,8 +116,8 @@ function fsm:on_turn_end(event, from, to)
 end
 
 function fsm:on_end_battle(event, from, to)
-	print("You have been able to last for " .. turn_counter .. " turns.")
-	best_result = math.max(best_result, turn_counter)
+	print("You have been able to last for " .. turn_counter .. " turns. Your score is " .. moves)
+	best_result = math.max(best_result, moves)
 	return fsm:back_to_menu()
 end
 
