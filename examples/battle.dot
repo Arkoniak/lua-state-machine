@@ -1,0 +1,16 @@
+digraph {
+none -> logo [label=startup];
+logo -> menu [label=enter_menu];
+menu -> new_battle [label=battle_start];
+menu -> highscore [label=go_highscore];
+highscore -> menu [label=back_to_menu];
+end_battle -> menu [label=back_to_menu];
+new_battle -> turn_start [label=ready];
+turn_start -> movement_phase [label=start_turn];
+movement_phase -> movement_phase [label=move];
+movement_phase -> attack_phase [label=end_move];
+attack_phase -> attack_phase [label=attack];
+attack_phase -> turn_end [label=end_attack];
+turn_end -> end_battle [label=battle_over];
+turn_end -> turn_start [label=next_turn];
+}

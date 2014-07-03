@@ -121,4 +121,5 @@ function fsm:on_end_battle(event, from, to)
 	return fsm:back_to_menu()
 end
 
-fsm:startup()
+fsm:todot("battle.dot")
+--fsm:startup()
