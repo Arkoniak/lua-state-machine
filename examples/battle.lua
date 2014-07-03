@@ -21,105 +21,107 @@ local fsm = machine.create({
 })
 
 -- fsm:todot("battle.dot")
-local ships
-local active_ships
-local turn_counter
-local games = 10
-local best_result = 0
-local moves
-local highscore_visits = 1
 
 math.randomseed( tonumber(tostring(os.time()):reverse():sub(1,6)))
 
-function fsm:on_logo(event, from, to)
+function fsm:on_logo(event, from, to, options)
 	print("Logo -> Menu")
-	return fsm:enter_menu()
+	return fsm:enter_menu(options)
 end
 
-function fsm:on_menu(event, from, to)
-	if games > 0 then
-		games = games - 1
+function fsm:on_menu(event, from, to, options)
+	if options.games > 0 then
+		options.best_result = options.best_result or 0
+		options.games = options.games - 1
 		print("Menu -> New Battle")
-		return fsm:battle_start()
-	elseif highscore_visits > 0 then
+		return fsm:battle_start(options)
+	elseif options.highscore_visits > 0 then
 		print("Menu -> Highscore")
-		highscore_visits = highscore_visits - 1
-		return fsm:go_highscore()
+		options.highscore_visits = options.highscore_visits - 1
+		return fsm:go_highscore(options)
 	else
 		print("   ")
 		print("I do not want to play anymore!!!")
 	end
 end
 
-function fsm:on_highscore(event, from, to)
+function fsm:on_highscore(event, from, to, options)
 	print("+++++++++++++++++++++")
-	print("My best result is: " .. best_result)
+	print("My best result is: " .. options.best_result)
 	print("+++++++++++++++++++++")
 
-	return fsm:back_to_menu()
+	return fsm:back_to_menu(options)
 end
 
-function fsm:on_new_battle(event, from, to)
+function fsm:on_new_battle(event, from, to, options)
 	print("New Battle Begins!")
-	ships = 10
-	turn_counter = 0
-	moves = 0
-	return fsm:ready()
+	options.ships = 10
+	options.turn_counter = 0
+	options.moves = 0
+--	ships = 10
+--	turn_counter = 0
+--	moves = 0
+	return fsm:ready(options)
 end
 
-function fsm:on_turn_start(event, from, to)
-	turn_counter = turn_counter + 1
-	print("  Turn: " .. turn_counter)
-	print("  Available Ships: " .. ships)
-	active_ships = ships
-	return fsm:start_turn()
+function fsm:on_turn_start(event, from, to, options)
+	options.turn_counter = options.turn_counter + 1
+	print("  Turn: " .. options.turn_counter)
+	print("  Available Ships: " .. options.ships)
+	options.active_ships = options.ships
+	options.delta_score = 0
+	return fsm:start_turn(options)
 end
 
-function fsm:on_end_move(event, from, to)
-	active_ships = ships
+function fsm:on_end_move(event, from, to, options)
+	options.active_ships = options.ships
+	print("    Score earned: " .. options.delta_score)
+	print("    Current score: " .. options.moves)
 	print("  Attack Phase: ")
 end
 
-function fsm:on_movement_phase(event, from, to)
-	print("    Active ships: " .. active_ships)
-	if active_ships == 0 then 
-		return fsm:end_move()
+function fsm:on_movement_phase(event, from, to, options)
+	if options.active_ships == 0 then 
+		return fsm:end_move(options)
 	else
-		moves = moves + 1
-		active_ships = active_ships - 1
-		return fsm:move()
+		options.delta_score = options.delta_score + 1
+		options.moves = options.moves + 1
+		options.active_ships = options.active_ships - 1
+		return fsm:move(options)
 	end
 end
 
-function fsm:on_end_attack(event, from, to)
-	print("    Available ships: " .. ships)
+function fsm:on_end_attack(event, from, to, options)
+	print("    Ships survived: " .. options.ships)
 	print("  End Turn")
 end
 
-function fsm:on_attack_phase(event, from, to)
-	if active_ships == 0 then
-		return fsm:end_attack()
+function fsm:on_attack_phase(event, from, to, options)
+	if options.active_ships == 0 then
+		return fsm:end_attack(options)
 	else
-		res = math.random(2) -- 1 = dead, 2 = survive
-		if res == 1 then ships = ships - 1 end
-		active_ships = active_ships - 1
-		return fsm:attack()
+		local res = math.random(2) -- 1 = dead, 2 = survive
+		if res == 1 then options.ships = options.ships - 1 end
+		options.active_ships = options.active_ships - 1
+		return fsm:attack(options)
 	end
 end
 
-function fsm:on_turn_end(event, from, to)
-	if ships == 0 then
-		return fsm:battle_over()
+function fsm:on_turn_end(event, from, to, options)
+	if options.ships == 0 then
+		return fsm:battle_over(options)
 	else
-		return fsm:next_turn()
+		return fsm:next_turn(options)
 	end
 end
 
-function fsm:on_end_battle(event, from, to)
-	print("You have been able to last for " .. turn_counter .. " turns. Your score is " .. moves)
-	best_result = math.max(best_result, moves)
-	return fsm:back_to_menu()
+function fsm:on_end_battle(event, from, to, options)
+	print("You survived for " .. options.turn_counter .. " turns. Your score is " .. options.moves)
+	options.best_result = math.max(options.best_result, options.moves)
+	return fsm:back_to_menu(options)
 end
 
-fsm:todot("battle.dot")
---fsm:startup()
+--fsm:todot("battle.dot")
+
+local options = { games = 100, highscore_visits = 1 }
+fsm:startup(options)
